@@ -12,19 +12,40 @@
 #include <stdio.h>
 #include <math.h>
 
+// number of steps for the interpolation
+#define DELTA   (1.0/20.0)
+// define and initialize initial and final
+// points for the position interpolation
 // define and initialize initial and final
 // points for the position interpolation
 GLfloat startEndPoints[2][3] =
-{{-3.0, 1.0, 0.0}, {3.0, 1.0, 0.0}};
+{{0.0, 0.0, 0.0}, {1.0, 1.0, -1.0}};
 
+// center and radius of circular trajectory
+GLfloat centerPoint[3] = {0.0, 0.0, -3.0};
+GLfloat radius = 1.0;
+
+// define and initialize initial and final
+// points for the position interpolation
+GLfloat startEndAngles[2][3] =
+{{0.0, 60.0, 0.0}, {0.0, 0.0, 0.0}};
+
+// define and initialize initial and final
+// points for the position interpolation
+// (alpha,beta,gamma) is equivalent to (180+alpha, -beta+180, 180+gamma)
+GLfloat startEndAngles1[2][3] =
+{{180.0, 120.0, 180.0}, {0.0, 0.0, 0.0}};
 //current step of the interpolation
 static float currAlpha = 0;
 
+int up, down;
 // display function
 void display(void)
 {
-
+    fprintf(stderr, "display\n");
     int currInd;
+    // current position and angle.
+    GLfloat currPos[3], currAngle[3], currAngle1[3], currPos2D[2];
     // current position and angle.
     GLfloat lightPos[4];
     // fourth homogeneous coordinate
@@ -35,30 +56,39 @@ void display(void)
     float matSpec[] = {0.0, 1.0, 0.0, 1.0};
     float matShine[] = {10.0};
 
-    // update the position
-    for(currInd = 0; currInd < 3; currInd++)
-    {
-        lightPos[currInd] = (1-currAlpha)*startEndPoints[0][currInd] +
-                            currAlpha * startEndPoints[1][currInd];
-    };
-
     // position light
     glLightfv(GL_LIGHT0, GL_POSITION, lightPos);
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
+    glPushMatrix(); //initial push
 //    glLoadIdentity();
 //    gluLookAt(0.0, 0.0, -0.1, 0.0, 0.0, 0.0, 0.0, 0.5, 0.0);
 
-    glPushMatrix(); //cubo interno
-    glTranslatef(0.0, 0.0, 0.0);
-    glutWireCube(0.1);
+    // update the position
+    for(currInd = 0; currInd < 3; currInd++)
+    {
+        // interpolate first angle
+        currAngle[currInd] = (1-currAlpha)*startEndAngles[0][currInd] +
+                             currAlpha * startEndAngles[1][currInd];
+        // interpolate second angle
+        currAngle1[currInd] = (1-currAlpha)*startEndAngles1[0][currInd] +
+                              currAlpha * startEndAngles1[1][currInd];
+    }
 
-    glPushMatrix(); //cubo esterno
-    glutWireCube(0.8);
-    glTranslatef(0.0, 0.0, 0.0);
+    glPushMatrix();
+    // place object into the scene
+    glTranslatef(0.0, 0.0, 0.5);
+    glRotatef(60.0, 1.0, 0.0, 0.0);
+    // ... and rotate it with the Euler angles
+    // the order is X, then Y, then Z
 
+    glRotatef(currAngle[0], 1.0, 0.0, 0.0);
+    glRotatef(currAngle[1], 0.0, 1.0, 0.0);
+    glRotatef(currAngle[2], 0.0, 0.0, 1.0);
 
+    glColor3f(1.0, 0.0, 0.0);
+    glutWireCube(0.5);
+    glPopMatrix();
     // Material properties of the box.
     glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDif);
     glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, matSpec);
@@ -68,20 +98,8 @@ void display(void)
     // let there be light
     glEnable(GL_LIGHT0);
 
-    //glPopMatrix();
-
-
-    //glPopMatrix();
-    //glPushMatrix();
-   // glTranslatef(-0.0, 0.0, 0.0);
-
+    up = 0;
     glFlush();
-    //glPopMatrix();
-
-    //glutPostRedisplay();
-
-    // flush graphics objects immediately
-    //glFinish();
 
 }
 
@@ -105,7 +123,7 @@ void init (void)
     glEnable(GL_DEPTH_TEST);
 
     glMatrixMode(GL_MODELVIEW);
-    //glLoadIdentity();
+    glLoadIdentity();
 
     // Turn on OpenGL lighting.
     //glEnable(GL_LIGHTING);
@@ -142,98 +160,99 @@ void keyInput(unsigned char key, int x, int y)
     fprintf(stderr, "keyInput\n");
     switch(key)
     {
-        case 27:
-            // ESC
-            exit(0);
-            break;
+    case 27:
+        // ESC
+        exit(0);
+        break;
 
-        case '1':
+    case '1':
 
-            gluLookAt(0.0, 0.0, -0.1, 0.0, 0.0, -0.8, -3.0, 0.0, 0.0);
-            glutPostRedisplay();
-            break;
+        gluLookAt(0.0, 0.0, -0.1, 0.0, 0.0, -0.8, -3.0, 0.0, 0.0);
+        glutPostRedisplay();
+        break;
 
-        case 's':
+    case 's':
 
-            glPopMatrix();
-            glPushMatrix();
+        glPopMatrix();
+        glPushMatrix();
+        glRotatef(-2.0, 1.0, 0.0, 0.0);
+        glutPostRedisplay();
+        break;
 
-            glTranslatef(0.0, 0.0, z -= speed);
-            fprintf(stderr, "z: %f\n", z);
-            glutPostRedisplay();
-            break;
+    case 'w':
 
-        case 'w':
+        glPopMatrix();
+        glPushMatrix();
+        glRotatef(2.0, 1.0, 0.0, 0.0);
+        glutPostRedisplay();
+        break;
 
-            glPopMatrix();
-            glPushMatrix();
-
-            glTranslatef(0.0, 0.0, z += speed);
-            fprintf(stderr, "z: %f\n", z);
-            glutPostRedisplay();
-            break;
-
-        case 'a':
-
-            glPopMatrix();
-            glPushMatrix();
-
-            glTranslatef(x2 += speed, 0.0, 0.0);
-            fprintf(stderr, "x: %f\n", x2);
-            glutPostRedisplay();
-            break;
-
-        case 'd':
-
-            glPopMatrix();
-            glPushMatrix();
-
-            glTranslatef(x2 -= speed, 0.0, 0.0);
-            fprintf(stderr, "x: %f\n", x2);
-            glutPostRedisplay();
-            break;
-
-        default:
-            // do nothing
-            break;
+    default:
+        // do nothing
+        break;
     }
 }
 
 GLfloat angle = 0.0;
-GLfloat rotation = 1.2;
+GLfloat rotation = 0.9;
+
+GLfloat scale = 1.0;
+GLfloat scroll = 0.0;
+GLfloat maxScroll = 7.0;
 
 void mouseInput(int button,int state,int x,int y) //da modificare
 {
     fprintf(stderr, "mouseInput\n");
-	switch(button)
-	{
-        case GLUT_LEFT_BUTTON:
-
-            glPopMatrix();
-            glPushMatrix();
-            glRotatef(angle += rotation, 0.0, 1.0, 0.0);
-            fprintf(stderr, "angle: %f\n", angle);
+    fprintf(stderr, "button: %d\n", button);
+    switch(button)
+    {
+    case 3:
+        //SCROLL IN
+        if(scroll < maxScroll)
+        {
+            glScalef(2.0, 2.0, 0.0);
+            scroll += scale;
+            fprintf(stderr, "scroll: %f\n", scroll);
             glutPostRedisplay();
-    //		if(state==GLUT_DOWN)
-    //			glutIdleFunc(spinDisplay);
-    //            fprintf(stderr, "state==GLUT_DOWN");
-            break;
+        }
 
-        case GLUT_RIGHT_BUTTON:
 
-            glPopMatrix();
-            glPushMatrix();
-            glRotatef(angle -= rotation, 0.0, 1.0, 0.0);
-            fprintf(stderr, "angle: %f\n", angle);
+        break;
+
+    case 4:
+        //SCROLL OUT
+        if(scroll > -maxScroll)
+        {
+            glScalef(0.5, 0.5, 0.0);
+            scroll -= scale;
+            fprintf(stderr, "scroll: %f\n", scroll);
             glutPostRedisplay();
-    //		if(state==GLUT_DOWN)
-    //			glutIdleFunc(spinDisplayReverse);
-    //            fprintf(stderr, "state==GLUT_DOWN");
-            break;
+        }
 
-        default:
-            break;
-	}
+
+        break;
+
+    case GLUT_LEFT_BUTTON:
+
+        currAlpha += DELTA;
+
+        fprintf(stderr, "currAlpha: %f\n", currAlpha);
+        glutPostRedisplay();
+        break;
+
+        break;
+
+    case GLUT_RIGHT_BUTTON:
+
+        currAlpha -= DELTA;
+
+        fprintf(stderr, "currAlpha: %f\n", currAlpha);
+        glutPostRedisplay();
+        break;
+
+    default:
+        break;
+    }
 }
 
 void SpecialKeys(int key, int x, int y)
