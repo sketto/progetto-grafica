@@ -1,11 +1,8 @@
 # depslib dependency file v1.0
-1599256374 source:/home/sketto/Documenti/Universita/Grafica Computerizzata/progetto/main.c
+1599347959 source:/home/sketto/Documenti/Universita/Grafica Computerizzata/progetto/main.c
 	<GL/glew.h>
 	<GL/freeglut.h>
-	<GL/freeglut_ext.h>
-	<GL/freeglut_std.h>
 	<GL/glu.h>
-	<GL/gl.h>
 	<GL/glut.h>
 	<stdio.h>
 	<math.h>
